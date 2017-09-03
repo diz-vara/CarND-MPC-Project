@@ -6,6 +6,9 @@
 
 using namespace std;
 
+const double Lf = 2.67;
+const double deg25_in_rad = 25. / 180.*M_PI; 
+
 class MPC {
  public:
   MPC();

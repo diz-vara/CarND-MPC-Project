@@ -51,16 +51,16 @@ class FG_eval {
       fg[0] += 3e3 * CppAD::pow(vars[epsi_start + i], 2);
  
       //be close to the reference speed
-      fg[0] += 1e-1 * CppAD::pow(vars[v_start + i] - v_ref, 2); ////exp(-0.1*vars[v_start + i]); // -80, 2);
+      fg[0] += 1e-1 * CppAD::pow(vars[v_start + i] - v_ref, 2); 
 
 
       if (i < N - 1) {
         fg[0] += 1e1 * CppAD::pow(vars[delta_start + i], 2);
-        fg[0] += 1e0 * CppAD::pow(vars[a_start + i], 2);
+        fg[0] += 1e1 * CppAD::pow(vars[a_start + i], 2);
       }
       if (i < N - 2) {
-        fg[0] += 1e1 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
-        fg[0] += 1e1 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+        fg[0] += 1e0 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+        fg[0] += 1e0 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
       }
 
     }
@@ -105,7 +105,7 @@ class FG_eval {
       AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * x0 * x0);  //????
 
 
-      // TODO: Setup the rest of the model constraints
+      // Setup the rest of the model constraints
       fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
       fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
       fg[1 + psi_start + t] = psi1 - (psi0 + v0 / Lf * delta0 * dt);
@@ -135,6 +135,15 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   size_t n_constraints = N * 6;
 
 
+  //to simplify understanding
+  double x = state[0];
+  double y = state[1];
+  double psi = state[2];
+  double v = state[3];
+  double cte = state[4];
+  double epsi = state[5];
+
+
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
   Dvector vars(n_vars);
@@ -143,12 +152,12 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   }
 
   // Set the initial variable values
-  vars[x_start] = state[0]; // x;
-  vars[y_start] = state[1]; // y;
-  vars[psi_start] = state[2]; // psi;
-  vars[v_start] = state[3]; // v;
-  vars[cte_start] = state[4]; // cte;
-  vars[epsi_start] = state[5]; // epsi;
+  vars[x_start] =  x;
+  vars[y_start] =  y;
+  vars[psi_start] = psi;
+  vars[v_start] = v;
+  vars[cte_start] = cte;
+  vars[epsi_start] = epsi;
 
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
@@ -177,23 +186,23 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
   for (i = a_start; i < n_vars; i++) {
-    vars_lowerbound[i] = -2.0;
-    vars_upperbound[i] = 2.0;
+    vars_lowerbound[i] = -1;
+    vars_upperbound[i] = 1;
   }
 
-  constraints_lowerbound[x_start] = state[0]; //x
-  constraints_lowerbound[y_start] = state[1]; //y
-  constraints_lowerbound[psi_start] = state[2]; // psi;
-  constraints_lowerbound[v_start] = state[3]; // v;
-  constraints_lowerbound[cte_start] = state[4]; // cte;
-  constraints_lowerbound[epsi_start] = state[5]; // epsi;
+  constraints_lowerbound[x_start] = x;
+  constraints_lowerbound[y_start] = y;
+  constraints_lowerbound[psi_start] = psi;
+  constraints_lowerbound[v_start] = v;
+  constraints_lowerbound[cte_start] = cte;
+  constraints_lowerbound[epsi_start] = epsi;
 
-  constraints_upperbound[x_start] = state[0]; // x;
-  constraints_upperbound[y_start] = state[1]; // y;
-  constraints_upperbound[psi_start] = state[2]; // psi;
-  constraints_upperbound[v_start] = state[3]; // v;
-  constraints_upperbound[cte_start] = state[4]; // cte;
-  constraints_upperbound[epsi_start] = state[5]; // epsi;
+  constraints_upperbound[x_start] = x;
+  constraints_upperbound[y_start] = y;
+  constraints_upperbound[psi_start] = psi;
+  constraints_upperbound[v_start] = v;
+  constraints_upperbound[cte_start] = cte;
+  constraints_upperbound[epsi_start] = epsi;
 
 
   // object that computes objective and constraints

@@ -12,6 +12,11 @@
 // for convenience
 using json = nlohmann::json;
 
+//delay in seconds
+const unsigned long latency_ms = 100;
+const double delay = (double)latency_ms/1000.;
+
+
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
@@ -65,6 +70,16 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   return result;
 }
 
+
+void next_state(double& px, double& py, double& psi, double& v, 
+                double& steer_value, double& throttle_value, double delay) {
+  px = px + v * cos(psi) *delay;
+  py = py + v * sin(psi) * delay;
+  psi = psi - v * steer_value * delay / Lf;
+  v = v + throttle_value * delay;
+}
+
+
 void coordTransform(double& wX, double& wY, double& carX, double& carY, double psi) {
   double dX = wX - carX;
   double dY = wY - carY;
@@ -96,6 +111,9 @@ int main() {
         auto j = json::parse(s);
         string event = j[0].get<string>();
         if (event == "telemetry") {
+          
+          
+          
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
@@ -103,6 +121,11 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          //we'll need these values too to estimate state in delta_t
+          double steer_value = j[1]["steering_angle"];
+          double throttle_value = j[1]["throttle"];
+
+          next_state(px, py, psi, v, steer_value, throttle_value, delay);
 
           for(unsigned int i = 0; i < ptsx.size(); ++i) {
             coordTransform(ptsx[i], ptsy[i], px, py, psi);
@@ -113,7 +136,7 @@ int main() {
           Eigen::VectorXd ey = Eigen::Map<Eigen::VectorXd>(ptsy.data(), ptsy.size());
           coeffs = polyfit(ex, ey, 3);
 
-          //just intercept. TODO: point-to-curve distance
+          //just intercept. 
           double cte = polyeval(coeffs, 0);
           //just linear coeff 
           double epsi = -atan(coeffs[1]);
@@ -121,7 +144,6 @@ int main() {
 
           Eigen::VectorXd state(6);
           //we transformed coordinates to zeros
-          //TODO:: latency here
           state << 0, 0, 0, v, cte, epsi;
 
           std::vector<double> result = mpc.Solve(state, coeffs);
@@ -131,8 +153,8 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value = result[0]/(deg25_in_rad * Lf);
-          double throttle_value = result[1];
+          steer_value = result[0]/(deg25_in_rad * Lf);
+          throttle_value = result[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -185,7 +207,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          //this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(latency_ms));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

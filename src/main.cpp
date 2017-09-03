@@ -71,6 +71,7 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
 }
 
 
+//state update function: calculates new state values in a 'delay' time interval
 void next_state(double& px, double& py, double& psi, double& v, 
                 double& steer_value, double& throttle_value, double delay) {
   px = px + v * cos(psi) *delay;
@@ -79,7 +80,7 @@ void next_state(double& px, double& py, double& psi, double& v,
   v = v + throttle_value * delay;
 }
 
-
+//transforms coordinates from the 'world' to the 'car' system
 void coordTransform(double& wX, double& wY, double& carX, double& carY, double psi) {
   double dX = wX - carX;
   double dY = wY - carY;
@@ -125,8 +126,10 @@ int main() {
           double steer_value = j[1]["steering_angle"];
           double throttle_value = j[1]["throttle"];
 
+          // look into the future: use 'delayed' state
           next_state(px, py, psi, v, steer_value, throttle_value, delay);
 
+          //transform coordinates from world to car
           for(unsigned int i = 0; i < ptsx.size(); ++i) {
             coordTransform(ptsx[i], ptsy[i], px, py, psi);
           }
@@ -148,10 +151,7 @@ int main() {
 
           std::vector<double> result = mpc.Solve(state, coeffs);
           /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
+          * Calculate steering angle and throttle using MPC.
           */
           steer_value = result[0]/(deg25_in_rad * Lf);
           throttle_value = result[1];

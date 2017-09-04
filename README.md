@@ -30,5 +30,9 @@ values I can receive from the simulator. Then it became just the same state upda
 we used many times.
 
 
+<img src="./cte_loss.png" width="800">
+
+
+
 
 

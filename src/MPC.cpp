@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-const size_t N = 15;
+const size_t N = 10;
 const double dt = 0.12;
 const double v_ref = 100;
 
@@ -46,9 +46,10 @@ class FG_eval {
 
     // Reference State Cost
     //TODO:: cost weights
+    std::cout << vars[cte_start] << ", " << vars[epsi_start] << ", a=" << vars[a_start];
     for (unsigned int i = 0; i < N; ++i) {
-      fg[0] += 3e3 * CppAD::pow(vars[cte_start + i], 2);
-      fg[0] += 3e3 * CppAD::pow(vars[epsi_start + i], 2);
+      fg[0] += 9e3 * CppAD::pow(vars[cte_start + i], 4);
+      fg[0] += 5e3 * CppAD::pow(vars[epsi_start + i], 4);
  
       //be close to the reference speed
       fg[0] += 1e-1 * CppAD::pow(vars[v_start + i] - v_ref, 2); 
@@ -64,7 +65,7 @@ class FG_eval {
       }
 
     }
-
+    std::cout << std::endl;
     //
     // Setup Constraints
     //

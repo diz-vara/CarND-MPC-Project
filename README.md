@@ -22,12 +22,12 @@ gas pedal and brakes as a single acceleration control) and steering angle *δ*.
 
 Knowing current vehicle state, it is easy to predict the next one, in a
 *dt* seconds:
-- *x*~t+1~ = *x*~t~ + *v*~t~ * cos(*ψ*~t~) * *dt*
-- *y*~t+1~ = *y*~t~ + *v*~t~ * sin(*ψ*~t~) * *dt*
-- *ψ*~t+1~ = *ψ*~t~ + *v*~t~ / L~f~ * *δ*~t~ * *dt*
-- *v*~t+1~ = *v*~t~ + *a*~t~ * *dt* 
+- *x*<sub>t+1</sub> = *x*<sub>t</sub> + *v*<sub>t</sub> * cos(*ψ*<sub>t</sub>) * *dt*
+- *y*<sub>t+1</sub> = *y*<sub>t</sub> + *v*<sub>t</sub> * sin(*ψ*<sub>t</sub>) * *dt*
+- *ψ*<sub>t+1</sub> = *ψ*<sub>t</sub> + *v*<sub>t</sub> / L<sub>f</sub> * *δ*<sub>t</sub> * *dt*
+- *v*<sub>t+1</sub> = *v*<sub>t</sub> + *a*<sub>t</sub> * *dt* 
 
-Where L~f~ is the distance between the vehicle's center of gravity and its front 
+Where L<sub>f</sub> is the distance between the vehicle's center of gravity and its front 
 (estimated as 2.67 meters for current project).
 
 # MPC

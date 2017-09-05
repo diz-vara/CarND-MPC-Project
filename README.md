@@ -1,4 +1,4 @@
-# CarND-Controls-MPC
+﻿# CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
 
 ---
@@ -7,6 +7,69 @@ Self-Driving Car Engineer Nanodegree Program
 This is my (Anton Varfolomeev) solution of MPC project
 
 ---
+
+## Model
+
+In this project, we used basic kinematic vehicle model: we (and simulator) do not have information
+about vehicle mass, engine, tires, road surface etc. We know (receive from the simulator):
+
+- vehicle position at moment *t* (*x*~​t~, *y*~​t~) - and other moments
+- vehicle velocity *v*
+- course angle ψ
+
+We can control our vehicle using two controls variables: throttle (used both for
+gas pedal and brakes as a single acceleration control) and steering angle *δ*.
+
+Knowing current vehicle state, it is easy to predict the next one, in a
+*dt* seconds:
+- *x*~t+1~ = *x*~t~ + *v*~t~ * cos(*ψ*~t~) * *dt*
+- *y*~t+1~ = *y*~t~ + *v*~t~ * sin(*ψ*~t~) * *dt*
+- *ψ*~t+1~ = *ψ*~t~ + *v*~t~ / L~f~ * *δ*~t~ * *dt*
+- *v*~t+1~ = *v*~t~ + *a*~t~ * *dt* 
+
+Where L~f~ is the distance between the vehicle's center of gravity and its front 
+(estimated as 2.67 meters for current project).
+
+# MPC
+
+To control the vehicle, we used Model Predictive Controller (MPC), which
+optimized control variables (acceleration and steering angle) with regard to
+the provided cost fucntions.
+
+As MPC operates in vehicle coordinate system, and simulator privdes us with values
+in it's own 'world' coordinates, coordinate transformation is performed 
+before sending values to the MPC (lines 84-94 of the main.cpp).
+
+Two of the critical parameters for the MPC are number of points to look into the 
+future *N* and distance between these points *dt*:
+- if both *N* and *dt* are small ( *N* * *dt* < 1 s),  predicted trajectory will be short, and the resulted vehicle trajectory whiggly;
+- long predicted trajectory (*N* * *dt* > 3 s) slows down the car: it brakes 200 meters before the turn;
+- large inter-point interval *dt* ( > 0.15 s) results in errors in prediction (end of the predicted trajectory points in wrong direction)
+- large number of points *N* makes solution unstable (optimizer can't deal with a large number of parameters??).
+
+Moderate values (10 points at the distance of .12 s ) gave me acceptable results. (Really,
+I started with these values and played a lot afterwards, to estimate the
+effect of different settings).
+ 
+Another set of hyperparameters with which we can afect MPC is the choice of 
+objective fucntion: which components to add and with which weights.
+
+The heaviest punishmet was laid (of course) for leaving the drivable
+part of the track. But after first experiments, seeing how the vehicle tryes
+to stay exactly at the center of the road, I decided to change the form of this 
+fucntion a little bit, punishing less for small fluctuations - but more for the
+large. To do it, I replaced traditional L2-norm for the CTE for more 
+steepy L4 - and then L6: 
+<img src="./cte_loss.png" width="800">
+
+
+## Delay
+
+To account for the delay in the control loop, I send to the MPC not the
+current vehicle state, but state in a *delay* seconds, predicted by the
+kinematic model (lines 75-85 of the main.cpp).
+
+
 
 ## Reflections on the solution
 
@@ -30,7 +93,7 @@ values I can receive from the simulator. Then it became just the same state upda
 we used many times.
 
 
-<img src="./cte_loss.png" width="800">
+
 
 
 

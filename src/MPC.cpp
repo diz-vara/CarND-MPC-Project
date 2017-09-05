@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-const size_t N = 10;
-const double dt = 0.12;
+const size_t N = 15;
+const double dt = 0.1;
 const double v_ref = 100;
 
 // This value assumes the model presented in the classroom is used.
@@ -48,20 +48,23 @@ class FG_eval {
     //TODO:: cost weights
     std::cout << vars[cte_start] << ", " << vars[epsi_start] << ", a=" << vars[a_start];
     for (unsigned int i = 0; i < N; ++i) {
-      fg[0] += 9e3 * CppAD::pow(vars[cte_start + i], 4);
-      fg[0] += 5e3 * CppAD::pow(vars[epsi_start + i], 4);
+      fg[0] += 3e3 * CppAD::pow(vars[cte_start + i]*1.2, 6);
+      fg[0] += 2e3 * CppAD::pow(vars[epsi_start + i]*0.8, 4);
  
       //be close to the reference speed
-      fg[0] += 1e-1 * CppAD::pow(vars[v_start + i] - v_ref, 2); 
+      fg[0] += 2e-1 * CppAD::pow(vars[v_start + i] - v_ref, 2); 
 
 
       if (i < N - 1) {
+        //do not turn the wheel too much!
         fg[0] += 1e1 * CppAD::pow(vars[delta_start + i], 2);
+        //and avoid large accelerations
         fg[0] += 1e1 * CppAD::pow(vars[a_start + i], 2);
       }
       if (i < N - 2) {
-        fg[0] += 1e0 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
-        fg[0] += 1e0 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+        //avoid abrupt changes in controls 
+        fg[0] += 1e1* CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+        fg[0] += 1e1 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
       }
 
     }
@@ -102,8 +105,8 @@ class FG_eval {
       AD<double> delta0 = vars[delta_start + t - 1];
       AD<double> a0 = vars[a_start + t - 1];
 
-      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2]*x0*x0 + coeffs[3]*x0*x0*x0;   //????
-      AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * x0 * x0);  //????
+      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2]*x0*x0 + coeffs[3]*x0*x0*x0;   //polyfit
+      AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * x0 * x0);  //derivative of the polinomial
 
 
       // Setup the rest of the model constraints
